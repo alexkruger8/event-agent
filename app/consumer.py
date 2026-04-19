@@ -23,9 +23,16 @@ logger = logging.getLogger(__name__)
 
 def main() -> None:
     from app.database.migrations import ensure_runtime_schema
+    from app.database.session import _get_session_local
+    from app.security.encryption import ensure_encryption_key
     from app.workers.kafka_consumer import run_consumer
 
     ensure_runtime_schema()
+    db = _get_session_local()()
+    try:
+        ensure_encryption_key(db)
+    finally:
+        db.close()
     logger.info("Starting Kafka consumer")
 
     stop_event = threading.Event()

@@ -12,6 +12,7 @@ from app.config import settings
 from app.database.migrations import ensure_runtime_schema
 from app.database.session import _get_session_local, get_db
 from app.middleware.auth import AuthMiddleware
+from app.security.encryption import ensure_encryption_key
 from app.workers import metric_worker
 
 logging.basicConfig(
@@ -36,6 +37,11 @@ def _run_pipeline() -> None:
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     ensure_runtime_schema()
+    db = _get_session_local()()
+    try:
+        ensure_encryption_key(db)
+    finally:
+        db.close()
     scheduler = BackgroundScheduler()
     scheduler.add_job(
         _run_pipeline,

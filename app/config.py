@@ -87,6 +87,7 @@ class Settings(BaseSettings):
     # ----- Seed / demo data -----
 
     include_demo_tenant: bool = True
+    publish_demo_kafka_events: bool = False
 
     # ----- Pydantic config -----
 

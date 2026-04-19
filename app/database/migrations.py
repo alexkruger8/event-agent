@@ -48,6 +48,12 @@ def ensure_runtime_schema() -> None:
         ALTER TABLE tenant_kafka_settings
           ADD COLUMN IF NOT EXISTS messages_ingested_count BIGINT NOT NULL DEFAULT 0
         """,
+        """
+        CREATE TABLE IF NOT EXISTS system_config (
+          key   TEXT PRIMARY KEY,
+          value TEXT NOT NULL
+        )
+        """,
     ]
     engine = get_engine()
     with engine.begin() as conn:
