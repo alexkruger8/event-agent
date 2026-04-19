@@ -1,4 +1,4 @@
-"""
+r"""
 Kafka / Redpanda consumer worker.
 
 Auto-subscribes to all topics on the configured cluster and routes each message
@@ -57,6 +57,15 @@ class _TenantRoute:
     event_name_fields: list[str] = field(default_factory=lambda: ["event_name", "type", "action", "name"])
 
 
+def _clean_optional_pattern(value: str | None) -> str | None:
+    if value is None:
+        return None
+    cleaned = value.strip()
+    if not cleaned or cleaned.lower() in {"none", "null"}:
+        return None
+    return cleaned
+
+
 def _compile_route(row: TenantKafkaSettings) -> _TenantRoute | None:
     bootstrap_servers = (row.bootstrap_servers or settings.kafka_bootstrap_servers or "").strip()
     if not bootstrap_servers:
@@ -70,6 +79,9 @@ def _compile_route(row: TenantKafkaSettings) -> _TenantRoute | None:
             row.last_connect_error = str(exc)
             logger.error("Skipping tenant %s — %s", row.tenant_id, exc)
             return None
+    topic_include_pattern = _clean_optional_pattern(row.topic_include_pattern)
+    topic_exclude_pattern = _clean_optional_pattern(row.topic_exclude_pattern)
+    error_topic_pattern = _clean_optional_pattern(row.error_topic_pattern) or r"\.errors?$"
     return _TenantRoute(
         tenant_id=uuid.UUID(str(row.tenant_id)),
         bootstrap_servers=bootstrap_servers,
@@ -77,9 +89,9 @@ def _compile_route(row: TenantKafkaSettings) -> _TenantRoute | None:
         sasl_mechanism=row.sasl_mechanism,
         sasl_username=row.sasl_username,
         sasl_password=sasl_password,
-        include_re=re.compile(row.topic_include_pattern) if row.topic_include_pattern else None,
-        exclude_re=re.compile(row.topic_exclude_pattern) if row.topic_exclude_pattern else None,
-        error_re=re.compile(row.error_topic_pattern),
+        include_re=re.compile(topic_include_pattern) if topic_include_pattern else None,
+        exclude_re=re.compile(topic_exclude_pattern) if topic_exclude_pattern else None,
+        error_re=re.compile(error_topic_pattern),
         event_name_fields=list(row.event_name_fields or ["event_name", "type", "action", "name"]),
     )
 
@@ -157,6 +169,9 @@ def _consumer_key(route: _TenantRoute) -> str:
     parts = [
         str(route.tenant_id),
         route.bootstrap_servers,
+        route.include_re.pattern if route.include_re else "",
+        route.exclude_re.pattern if route.exclude_re else "",
+        route.error_re.pattern,
         route.security_protocol or "",
         route.sasl_mechanism or "",
         route.sasl_username or "",
@@ -165,6 +180,12 @@ def _consumer_key(route: _TenantRoute) -> str:
         else "",
     ]
     return "|".join(parts)
+
+
+def _subscription_pattern(route: _TenantRoute) -> str:
+    if route.include_re is not None:
+        return route.include_re.pattern
+    return r"^[^_].*"
 
 
 def _sync_consumers(
@@ -188,7 +209,8 @@ def _sync_consumers(
             continue
         route = routes_by_key[key]
         consumer = consumer_cls(_consumer_config(route))
-        consumer.subscribe([r"^[^_].*"])  # all topics not starting with _
+        subscription_pattern = _subscription_pattern(route)
+        consumer.subscribe([subscription_pattern])
         consumers[key] = (consumer, route)
         row = (
             db.query(TenantKafkaSettings)
@@ -200,7 +222,8 @@ def _sync_consumers(
             row.last_connect_error = None
             db.commit()
         logger.info(
-            "Subscribed to all topics on brokers %s for tenant %s",
+            "Subscribed to topics matching '%s' on brokers %s for tenant %s",
+            subscription_pattern,
             route.bootstrap_servers,
             route.tenant_id,
         )
@@ -367,11 +390,23 @@ def run_consumer(stop_event: threading.Event) -> None:
                 if msg is None:
                     continue
                 if msg.error():
-                    if msg.error().code() == KafkaError._PARTITION_EOF:
+                    kafka_error = msg.error()
+                    if kafka_error.code() == KafkaError._PARTITION_EOF:
                         continue
-                    error = KafkaException(msg.error())
+                    error = KafkaException(kafka_error)
                     logger.error("Kafka error for tenant %s: %s", route.tenant_id, error)
                     _record_connect_error(db, route, str(error))
+                    if kafka_error.code() in (
+                        KafkaError.TOPIC_AUTHORIZATION_FAILED,
+                        KafkaError.GROUP_AUTHORIZATION_FAILED,
+                    ):
+                        consumer.close()
+                        del consumers[key]
+                        logger.error(
+                            "Closed Kafka consumer for tenant %s after authorization failure; "
+                            "it will be retried on the next settings refresh",
+                            route.tenant_id,
+                        )
                     continue
 
                 topic = msg.topic()

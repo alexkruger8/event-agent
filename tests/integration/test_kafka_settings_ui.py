@@ -87,6 +87,22 @@ def test_updates_existing_tenant_kafka_settings(client: TestClient, db: Session,
 
 
 @pytest.mark.integration
+def test_none_string_topic_include_pattern_is_treated_as_blank(
+    client: TestClient,
+    db: Session,
+    tenant_id: uuid.UUID,
+) -> None:
+    _post_settings(client, tenant_id, topic_include_pattern="None")
+
+    settings = (
+        db.query(TenantKafkaSettings)
+        .filter(TenantKafkaSettings.tenant_id == tenant_id)
+        .one()
+    )
+    assert settings.topic_include_pattern is None
+
+
+@pytest.mark.integration
 def test_saves_encrypted_sasl_password(client: TestClient, db: Session, tenant_id: uuid.UUID) -> None:
     key = Fernet.generate_key().decode("ascii")
 
