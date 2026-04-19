@@ -1,0 +1,85 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ai-event-insights"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.95.0",
+    "uvicorn>=0.21.0",
+    "sqlalchemy>=2.0",
+    "psycopg[binary]>=3.0.0",
+    "pydantic>=2.6",
+    "pydantic-settings>=2.2",
+    "anthropic>=0.40.0",
+    "openai>=1.0.0",
+    "slack-sdk>=3.0.0",
+    "twilio>=8.0.0",
+    "python-multipart>=0.0.9",
+    "jinja2>=3.1",
+    "apscheduler>=3.10",
+    "mcp>=1.20.0",
+    "confluent-kafka>=2.3.0",
+    "cryptography>=42.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "mypy>=1.9",
+    "ruff>=0.4",
+    "sqlacodegen>=3.2.0",
+    "httpx>=0.27",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["app*"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+exclude = ["venv/"]
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_return_any = true
+disallow_untyped_defs = true
+disallow_any_generics = true
+no_implicit_optional = true
+check_untyped_defs = true
+explicit_package_bases = true
+
+[[tool.mypy.overrides]]
+module = [
+    "kafka.*",
+    "confluent_kafka.*",
+    "pyspark.*",
+    "pyiceberg.*",
+    "twilio.*",
+    "apscheduler.*",
+    "mcp.*",
+    "openai",
+    "openai.*",
+]
+ignore_missing_imports = true
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+pythonpath = ["."]
+asyncio_mode = "auto"
+markers = [
+    "unit: Unit tests that mock all external dependencies",
+    "integration: Integration tests that use real services",
+]

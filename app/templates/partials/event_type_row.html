@@ -1,0 +1,46 @@
+<tr id="event-type-{{ et.event_name }}">
+  <td class="px-4 py-3 font-mono font-medium text-gray-300 align-top">{{ et.event_name }}</td>
+  <td class="px-4 py-3 align-top">
+    {% if et.description %}
+      <span class="text-gray-200">{{ et.description }}</span>
+      {% if et.type_metadata %}
+        <div class="flex flex-wrap gap-1 mt-1">
+          {% if et.type_metadata.category %}
+            <span class="bg-blue-950 text-blue-400 text-xs px-2 py-0.5 rounded-full">
+              {{ et.type_metadata.category }}
+            </span>
+          {% endif %}
+          {% if et.type_metadata.business_context %}
+            <span class="bg-purple-950 text-purple-400 text-xs px-2 py-0.5 rounded-full">
+              {{ et.type_metadata.business_context }}
+            </span>
+          {% endif %}
+          {% if et.type_metadata.related_events %}
+            {% for rel in et.type_metadata.related_events %}
+              <span class="bg-gray-800 text-gray-400 text-xs px-2 py-0.5 rounded-full">
+                → {{ rel }}
+              </span>
+            {% endfor %}
+          {% endif %}
+        </div>
+      {% endif %}
+    {% else %}
+      <span class="text-gray-600 italic text-xs">No description</span>
+    {% endif %}
+    {% if saved is defined and saved %}
+      <span class="ml-2 text-green-500 text-xs">✓ Saved</span>
+    {% endif %}
+  </td>
+  <td class="px-4 py-3 text-right text-gray-500 align-top">
+    {{ et.total_events or 0 | int }}
+  </td>
+  <td class="px-4 py-3 text-right align-top">
+    <button
+      hx-get="/ui/tenants/{{ tenant_id }}/event-types/{{ et.event_name }}/edit"
+      hx-target="#event-type-{{ et.event_name }}"
+      hx-swap="outerHTML"
+      class="text-xs text-gray-500 hover:text-gray-200 underline underline-offset-2">
+      Edit
+    </button>
+  </td>
+</tr>

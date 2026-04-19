@@ -1,0 +1,10 @@
+<div id="tenant-name" class="flex items-center gap-3 mt-1">
+  <h1 class="text-2xl font-semibold text-gray-100">{{ tenant.name }}</h1>
+  <button
+    hx-get="/ui/tenants/{{ tenant.id }}/name/edit"
+    hx-target="#tenant-name"
+    hx-swap="outerHTML"
+    class="text-xs text-gray-600 hover:text-gray-300 underline underline-offset-2 mt-0.5">
+    Rename
+  </button>
+</div>

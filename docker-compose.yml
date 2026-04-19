@@ -1,0 +1,89 @@
+services:
+  event-db:
+    image: postgres:17
+    ports:
+      - "127.0.0.1:5433:5432"
+    environment:
+      POSTGRES_DB: events
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass
+    volumes:
+      - event-db-data:/var/lib/postgresql/data
+      - ./event-db-setup-scripts:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d events"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    ports:
+      - "127.0.0.1:8000:8000"
+    env_file: .env
+    environment:
+      # Override DATABASE_URL to use the internal Docker network hostname
+      DATABASE_URL: postgresql+psycopg://user:pass@event-db:5432/events
+    depends_on:
+      event-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  kafka-consumer:
+    build: .
+    command: python -m app.consumer
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://user:pass@event-db:5432/events
+    depends_on:
+      event-db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  seed:
+    build: .
+    command: python scripts/seed.py
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://user:pass@event-db:5432/events
+      INCLUDE_DEMO_TENANT: ${INCLUDE_DEMO_TENANT:-true}
+    depends_on:
+      app:
+        condition: service_healthy
+    restart: "no"
+
+  worker:
+    image: curlimages/curl:latest
+    # Runs the pipeline once on startup, then every hour
+    command: >
+      sh -c "sleep 5 &&
+             while true; do
+               curl -s -X POST http://app:8000/admin/run-pipeline -H \"X-API-Key: ${API_KEY}\";
+               sleep 3600;
+             done"
+    env_file: .env
+    depends_on:
+      app:
+        condition: service_healthy
+    restart: unless-stopped
+
+  ngrok:
+    profiles: ["ngrok"]
+    image: ngrok/ngrok:latest
+    command: http app:8000 --url=${NGROK_DOMAIN}
+    environment:
+      NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN}
+    ports:
+      - "127.0.0.1:4040:4040"
+    depends_on:
+      app:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  event-db-data:

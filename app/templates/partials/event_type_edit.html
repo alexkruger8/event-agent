@@ -1,0 +1,57 @@
+<tr id="event-type-{{ et.event_name }}">
+  <td class="px-4 py-3 font-mono font-medium text-gray-300 align-top">{{ et.event_name }}</td>
+  <td class="px-4 py-3 align-top" colspan="2">
+    <form hx-post="/ui/tenants/{{ tenant_id }}/event-types/{{ et.event_name }}"
+          hx-target="#event-type-{{ et.event_name }}"
+          hx-swap="outerHTML">
+      <div class="space-y-2">
+        <input
+          type="text"
+          name="description"
+          value="{{ et.description or '' }}"
+          placeholder="What does this event represent?"
+          class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-600"
+          autofocus
+        />
+        <div class="flex gap-2">
+          <input
+            type="text"
+            name="category"
+            value="{{ et.type_metadata.category if et.type_metadata and et.type_metadata.category else '' }}"
+            placeholder="Category (e.g. commerce)"
+            class="flex-1 bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-600"
+          />
+          <input
+            type="text"
+            name="business_context"
+            value="{{ et.type_metadata.business_context if et.type_metadata and et.type_metadata.business_context else '' }}"
+            placeholder="Business context"
+            class="flex-1 bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-600"
+          />
+        </div>
+        {% if et.type_metadata and et.type_metadata.related_events %}
+          <div class="flex flex-wrap gap-1">
+            {% for rel in et.type_metadata.related_events %}
+              <span class="bg-gray-800 text-gray-500 text-xs px-2 py-0.5 rounded-full">→ {{ rel }}</span>
+            {% endfor %}
+            <span class="text-xs text-gray-600 italic self-center">related events (set via conversation)</span>
+          </div>
+        {% endif %}
+      </div>
+      <div class="flex gap-2 mt-2">
+        <button type="submit"
+                class="bg-gray-100 text-gray-900 text-xs px-3 py-1.5 rounded hover:bg-white transition-colors font-medium">
+          Save
+        </button>
+        <button type="button"
+                hx-get="/ui/tenants/{{ tenant_id }}/event-types/{{ et.event_name }}"
+                hx-target="#event-type-{{ et.event_name }}"
+                hx-swap="outerHTML"
+                class="text-xs text-gray-500 hover:text-gray-300 px-3 py-1.5 rounded border border-gray-700 hover:border-gray-500 transition-colors">
+          Cancel
+        </button>
+      </div>
+    </form>
+  </td>
+  <td class="px-4 py-3 align-top"></td>
+</tr>

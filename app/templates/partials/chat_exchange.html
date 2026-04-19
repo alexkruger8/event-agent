@@ -1,0 +1,16 @@
+{# Appended to #chat-messages after each user turn #}
+
+<div class="flex justify-end">
+  <div class="max-w-[80%] bg-indigo-950 border border-indigo-800 rounded-2xl rounded-tr-sm px-4 py-3 text-sm text-gray-100">
+    {{ user_message }}
+  </div>
+</div>
+
+<div class="flex justify-start">
+  <div class="max-w-[85%]">
+    <p class="text-xs text-gray-600 mb-1.5 ml-1">AI</p>
+    <div class="bg-gray-900 border border-gray-800 rounded-2xl rounded-tl-sm px-4 py-3 text-sm text-gray-200 prose-chat">
+      {{ assistant_message | replace('\n', '<br>') | safe }}
+    </div>
+  </div>
+</div>

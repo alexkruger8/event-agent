@@ -1,0 +1,15 @@
+<span class="text-green-400 font-medium">✓ Scan complete</span>
+<span class="text-gray-500 mx-1.5">—</span>
+<span class="text-gray-300 text-sm">
+  {{ result.metrics }} metric{% if result.metrics != 1 %}s{% endif %}{% if result.property_metrics %}, {{ result.property_metrics }} property metric{% if result.property_metrics != 1 %}s{% endif %}{% endif %}{% if result.anomalies %}, <span class="text-amber-400">{{ result.anomalies }} anomal{% if result.anomalies != 1 %}ies{% else %}y{% endif %}</span>{% endif %}{% if result.trends %}, <span class="text-blue-400">{{ result.trends }} trend{% if result.trends != 1 %}s{% endif %}</span>{% endif %}{% if result.insights %}, {{ result.insights }} insight{% if result.insights != 1 %}s{% endif %}{% endif %}
+</span>
+
+{% if event_types is defined %}
+  {% set event_types_oob = true %}
+  {% include "partials/event_types_section.html" %}
+{% endif %}
+
+{% if anomalies is defined and trends is defined and insights is defined %}
+  {% set dashboard_sections_oob = true %}
+  {% include "partials/dashboard_sections.html" %}
+{% endif %}

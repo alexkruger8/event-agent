@@ -1,0 +1,24 @@
+<form id="tenant-name"
+      hx-post="/ui/tenants/{{ tenant.id }}/name"
+      hx-target="#tenant-name"
+      hx-swap="outerHTML"
+      class="flex items-center gap-2 mt-1">
+  <input
+    type="text"
+    name="name"
+    value="{{ tenant.name or '' }}"
+    class="bg-gray-800 border border-gray-600 rounded px-3 py-1.5 text-lg font-semibold text-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-500 w-64"
+    autofocus
+  />
+  <button type="submit"
+          class="bg-gray-100 text-gray-900 text-xs px-3 py-1.5 rounded hover:bg-white transition-colors font-medium">
+    Save
+  </button>
+  <button type="button"
+          hx-get="/ui/tenants/{{ tenant.id }}/name"
+          hx-target="#tenant-name"
+          hx-swap="outerHTML"
+          class="text-xs text-gray-500 hover:text-gray-300 px-3 py-1.5 rounded border border-gray-700 hover:border-gray-500 transition-colors">
+    Cancel
+  </button>
+</form>

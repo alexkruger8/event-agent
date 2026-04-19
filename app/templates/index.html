@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Tenants — AI Event Intelligence{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+  <h1 class="text-2xl font-semibold">Tenants</h1>
+  <button
+    onclick="document.getElementById('new-tenant-form').classList.toggle('hidden')"
+    class="bg-gray-100 text-gray-900 text-sm px-4 py-1.5 rounded-md hover:bg-white transition-colors font-medium">
+    + New tenant
+  </button>
+</div>
+
+<!-- New tenant form (hidden by default) -->
+<div id="new-tenant-form" class="hidden mb-4">
+  <form hx-post="/ui/tenants"
+        hx-target="#tenant-list"
+        hx-swap="beforeend"
+        hx-on::after-request="this.reset(); document.getElementById('new-tenant-form').classList.add('hidden')"
+        class="flex gap-2">
+    <input
+      type="text"
+      name="name"
+      placeholder="Tenant name"
+      required
+      class="flex-1 bg-gray-800 border border-gray-700 rounded-md px-3 py-2 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-600"
+      autofocus
+    />
+    <button type="submit"
+            class="bg-gray-100 text-gray-900 text-sm px-4 py-2 rounded-md hover:bg-white transition-colors font-medium shrink-0">
+      Create
+    </button>
+    <button type="button"
+            onclick="document.getElementById('new-tenant-form').classList.add('hidden')"
+            class="text-sm text-gray-500 hover:text-gray-300 px-3 py-2 rounded-md border border-gray-700 hover:border-gray-500 transition-colors">
+      Cancel
+    </button>
+  </form>
+</div>
+
+{% if tenants %}
+<div id="tenant-list" class="bg-gray-900 rounded-lg border border-gray-800 overflow-hidden">
+  {% for tenant in tenants %}
+    {% include "partials/tenant_row.html" %}
+  {% endfor %}
+</div>
+{% else %}
+<div id="tenant-list" class="bg-gray-900 rounded-lg border border-gray-800 overflow-hidden">
+  <p class="px-6 py-12 text-center text-gray-500 text-sm">
+    No tenants yet. Create one above or run
+    <code class="bg-gray-800 text-gray-300 px-1.5 py-0.5 rounded font-mono">python scripts/seed.py</code>.
+  </p>
+</div>
+{% endif %}
+{% endblock %}

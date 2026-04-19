@@ -1,0 +1,172 @@
+<div id="dashboard-sections"{% if dashboard_sections_oob is defined and dashboard_sections_oob %} hx-swap-oob="outerHTML"{% endif %}>
+  <!-- Anomalies -->
+  <section class="mb-10">
+    <h2 class="text-lg font-semibold mb-3 text-gray-100">
+      Open Anomalies
+      {% if anomalies %}
+        <span class="ml-2 text-sm font-normal text-amber-400">{{ anomalies | length }}</span>
+      {% endif %}
+    </h2>
+
+    {% if anomalies %}
+    <div class="bg-gray-900 rounded-lg border border-gray-800 overflow-hidden">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-gray-800 bg-gray-950 text-left text-gray-500 text-xs uppercase tracking-wide">
+            <th class="px-4 py-3">Metric</th>
+            <th class="px-4 py-3 w-24">Severity</th>
+            <th class="px-4 py-3 w-28 text-right">Deviation</th>
+            <th class="px-4 py-3 w-28 text-right">Value</th>
+            <th class="px-4 py-3 w-28 text-right">Baseline</th>
+            <th class="px-4 py-3 w-36 text-right">Detected</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-800">
+          {% for a in anomalies %}
+          <tr class="hover:bg-gray-800/50 transition-colors">
+            <td class="px-4 py-3 font-mono text-gray-200 text-xs">{{ a.metric_name or "—" }}</td>
+            <td class="px-4 py-3">
+              {% set sev = a.severity or "" %}
+              {% if sev == "critical" %}
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-950 text-red-300 border border-red-800">critical</span>
+              {% elif sev == "high" %}
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-950 text-orange-300 border border-orange-800">high</span>
+              {% elif sev == "medium" %}
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-950 text-yellow-300 border border-yellow-800">medium</span>
+              {% else %}
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-800 text-gray-400 border border-gray-700">{{ sev or "low" }}</span>
+              {% endif %}
+            </td>
+            <td class="px-4 py-3 text-right font-mono text-gray-300">
+              {% if a.deviation_percent is not none %}
+                {{ "%+.1f"|format(a.deviation_percent) }}%
+              {% else %}—{% endif %}
+            </td>
+            <td class="px-4 py-3 text-right font-mono text-gray-400 text-xs">
+              {% if a.current_value is not none %}{{ "%.1f"|format(a.current_value) }}{% else %}—{% endif %}
+            </td>
+            <td class="px-4 py-3 text-right font-mono text-gray-500 text-xs">
+              {% if a.baseline_value is not none %}{{ "%.1f"|format(a.baseline_value) }}{% else %}—{% endif %}
+            </td>
+            <td class="px-4 py-3 text-right text-gray-500 text-xs">
+              {% if a.detected_at %}{{ a.detected_at.strftime("%b %d %H:%M") }}{% else %}—{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="bg-gray-900 rounded-lg border border-gray-800 px-6 py-8 text-center text-gray-500 text-sm">
+      No open anomalies. Run a scan to check for issues.
+    </div>
+    {% endif %}
+  </section>
+
+  <!-- Trends -->
+  <section class="mb-10">
+    <h2 class="text-lg font-semibold mb-3 text-gray-100">
+      Active Trends
+      {% if trends %}
+        <span class="ml-2 text-sm font-normal text-blue-400">{{ trends | length }}</span>
+      {% endif %}
+    </h2>
+
+    {% if trends %}
+    <div class="bg-gray-900 rounded-lg border border-gray-800 overflow-hidden">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-gray-800 bg-gray-950 text-left text-gray-500 text-xs uppercase tracking-wide">
+            <th class="px-4 py-3">Metric</th>
+            <th class="px-4 py-3 w-24">Direction</th>
+            <th class="px-4 py-3 w-32 text-right">Rate / hr</th>
+            <th class="px-4 py-3 w-24 text-right">Samples</th>
+            <th class="px-4 py-3 w-20 text-right">R²</th>
+            <th class="px-4 py-3 w-36 text-right">Detected</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-800">
+          {% for t in trends %}
+          <tr class="hover:bg-gray-800/50 transition-colors">
+            <td class="px-4 py-3 font-mono text-gray-200 text-xs">{{ t.metric_name or "—" }}</td>
+            <td class="px-4 py-3">
+              {% if t.direction == "up" %}
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-blue-950 text-blue-300 border border-blue-800">↑ up</span>
+              {% elif t.direction == "down" %}
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-amber-950 text-amber-300 border border-amber-800">↓ down</span>
+              {% else %}
+                <span class="text-gray-500 text-xs">—</span>
+              {% endif %}
+            </td>
+            <td class="px-4 py-3 text-right font-mono text-gray-300">
+              {% if t.change_percent_per_hour is not none %}
+                {{ "%+.1f"|format(t.change_percent_per_hour) }}%
+              {% else %}—{% endif %}
+            </td>
+            <td class="px-4 py-3 text-right font-mono text-gray-400 text-xs">
+              {{ t.sample_size or "—" }}
+            </td>
+            <td class="px-4 py-3 text-right font-mono text-gray-400 text-xs">
+              {% if t.context and t.context.r_squared is not none %}
+                {{ "%.2f"|format(t.context.r_squared) }}
+              {% else %}—{% endif %}
+            </td>
+            <td class="px-4 py-3 text-right text-gray-500 text-xs">
+              {% if t.detected_at %}{{ t.detected_at.strftime("%b %d %H:%M") }}{% else %}—{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="bg-gray-900 rounded-lg border border-gray-800 px-6 py-8 text-center text-gray-500 text-sm">
+      No active trends detected.
+    </div>
+    {% endif %}
+  </section>
+
+  <!-- Insights -->
+  <section class="mb-10">
+    <h2 class="text-lg font-semibold mb-3 text-gray-100">Recent Insights</h2>
+
+    {% if insights %}
+    <div class="space-y-3">
+      {% for ins in insights %}
+      <div class="bg-gray-900 rounded-lg border border-gray-800 px-5 py-4">
+        <div class="flex items-start justify-between gap-4 mb-1.5">
+          <div class="flex items-center gap-2 min-w-0">
+            {% if ins.anomaly_id %}
+              <span class="shrink-0 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-950 text-amber-300 border border-amber-800">Anomaly</span>
+            {% elif ins.trend_id %}
+              <span class="shrink-0 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-950 text-blue-300 border border-blue-800">Trend</span>
+            {% endif %}
+            <span class="font-medium text-gray-100 truncate">{{ ins.title or "Untitled insight" }}</span>
+          </div>
+          <div class="flex items-center gap-3 shrink-0 text-xs text-gray-500">
+            {% if ins.confidence is not none %}
+              <span title="Confidence">{{ (ins.confidence * 100) | int }}% conf.</span>
+            {% endif %}
+            {% if ins.created_at %}
+              <span>{{ ins.created_at.strftime("%b %d %H:%M") }}</span>
+            {% endif %}
+          </div>
+        </div>
+        {% if ins.summary %}
+          <p class="text-sm text-gray-400 leading-relaxed">{{ ins.summary }}</p>
+        {% endif %}
+        {% if ins.anomaly %}
+          <p class="text-xs text-gray-600 font-mono mt-2">{{ ins.anomaly.metric_name }}</p>
+        {% elif ins.trend %}
+          <p class="text-xs text-gray-600 font-mono mt-2">{{ ins.trend.metric_name }}</p>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="bg-gray-900 rounded-lg border border-gray-800 px-6 py-8 text-center text-gray-500 text-sm">
+      No insights generated yet. Run a scan to analyse anomalies and trends.
+    </div>
+    {% endif %}
+  </section>
+</div>

@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}{{ tenant.name }} — Dashboard{% endblock %}
+
+{% block content %}
+
+<div class="mb-6">
+  <a href="/ui/" class="text-sm text-gray-500 hover:text-gray-300">← All tenants</a>
+  <div class="flex items-start justify-between gap-4 mt-1">
+    <div>
+      <h1 class="text-xl font-semibold text-gray-100">{{ tenant.name }}</h1>
+      <p class="text-sm text-gray-500 font-mono mt-0.5">{{ tenant.id }}</p>
+    </div>
+    <div class="flex items-center gap-3 pt-1 shrink-0">
+      <button
+        hx-post="/ui/tenants/{{ tenant.id }}/scan"
+        hx-target="#scan-status"
+        hx-swap="innerHTML"
+        hx-indicator="#scan-spinner"
+        hx-disabled-elt="this"
+        class="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-200 text-sm px-4 py-1.5 rounded-md transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        <svg id="scan-spinner" class="htmx-indicator animate-spin h-3.5 w-3.5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+        </svg>
+        Scan
+      </button>
+      <span id="scan-status" class="text-sm"></span>
+    </div>
+  </div>
+</div>
+
+<!-- Tab nav -->
+<div class="flex gap-1 mb-8 border-b border-gray-800">
+  <a href="/ui/tenants/{{ tenant.id }}/chat"
+     class="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-300 border-b-2 border-transparent -mb-px transition-colors">
+    Chat
+  </a>
+  <a href="/ui/tenants/{{ tenant.id }}/dashboard"
+     class="px-4 py-2 text-sm font-medium text-gray-100 border-b-2 border-gray-100 -mb-px">
+    Dashboard
+  </a>
+  <a href="/ui/tenants/{{ tenant.id }}"
+     class="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-300 border-b-2 border-transparent -mb-px transition-colors">
+    Settings
+  </a>
+</div>
+
+{% include "partials/dashboard_sections.html" %}
+
+{% endblock %}

@@ -1,0 +1,26 @@
+name: ai-events-test
+
+services:
+  event-db:
+    image: postgres:17
+    ports:
+      - "127.0.0.1:5434:5432"
+    environment:
+      POSTGRES_DB: events
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass
+    volumes:
+      - event-db-test-data:/var/lib/postgresql/data
+      - ./event-db-setup-scripts:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U user -d events"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  event-db-test-data:

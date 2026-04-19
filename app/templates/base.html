@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}AI Event Intelligence{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { darkMode: 'class' }</script>
+  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+  <style>.htmx-indicator{display:none}.htmx-request .htmx-indicator{display:inline-block}.htmx-request.htmx-indicator{display:inline-block}</style>
+  {% block head %}{% endblock %}
+</head>
+<body class="{% block body_class %}bg-gray-950 text-gray-100 min-h-screen{% endblock %}">
+  <nav class="bg-gray-900 border-b border-gray-800 px-6 py-4">
+    <div class="max-w-4xl mx-auto">
+      <a href="/ui/" class="font-semibold text-gray-100 hover:text-gray-300">
+        AI Event Intelligence
+      </a>
+    </div>
+  </nav>
+  <main class="{% block main_class %}max-w-4xl mx-auto px-6 py-8{% endblock %}">
+    {% block content %}{% endblock %}
+  </main>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,358 @@
+{% extends "base.html" %}
+{% block title %}{{ tenant.name }} — AI Event Intelligence{% endblock %}
+
+{% block content %}
+
+<div class="mb-6">
+  <a href="/ui/" class="text-sm text-gray-500 hover:text-gray-300">← All tenants</a>
+  <div class="flex items-start justify-between gap-4 mt-1">
+    <div>
+      {% include "partials/tenant_name.html" %}
+      <p class="text-sm text-gray-500 font-mono mt-0.5">{{ tenant.id }}</p>
+    </div>
+    <div class="flex items-center gap-3 pt-1 shrink-0">
+      <button
+        hx-post="/ui/tenants/{{ tenant.id }}/scan"
+        hx-target="#scan-status"
+        hx-swap="innerHTML"
+        hx-indicator="#scan-spinner"
+        hx-disabled-elt="this"
+        class="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-200 text-sm px-4 py-1.5 rounded-md transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        <svg id="scan-spinner" class="htmx-indicator animate-spin h-3.5 w-3.5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+        </svg>
+        Scan
+      </button>
+      <span id="scan-status" class="text-sm"></span>
+    </div>
+  </div>
+</div>
+
+<!-- Tab nav -->
+<div class="flex gap-1 mb-8 border-b border-gray-800">
+  <a href="/ui/tenants/{{ tenant.id }}/chat"
+     class="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-300 border-b-2 border-transparent -mb-px transition-colors">
+    Chat
+  </a>
+  <a href="/ui/tenants/{{ tenant.id }}/dashboard"
+     class="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-300 border-b-2 border-transparent -mb-px transition-colors">
+    Dashboard
+  </a>
+  <a href="/ui/tenants/{{ tenant.id }}"
+     class="px-4 py-2 text-sm font-medium text-gray-100 border-b-2 border-gray-100 -mb-px">
+    Settings
+  </a>
+</div>
+
+<!-- Event Types -->
+{% include "partials/event_types_section.html" %}
+
+<!-- Kafka / Redpanda -->
+<section class="mb-10">
+  <h2 class="text-lg font-semibold mb-1 text-gray-100">Kafka / Redpanda</h2>
+  <p class="text-sm text-gray-500 mb-3">
+    The consumer auto-subscribes to all topics on the cluster and routes messages to this tenant.
+    Leave patterns blank to receive everything.
+  </p>
+  <div class="bg-gray-900 rounded-lg border border-gray-800">
+    <div class="px-6 py-5">
+      <form hx-post="/ui/tenants/{{ tenant.id }}/kafka"
+            hx-target="#kafka-status"
+            hx-swap="innerHTML"
+            class="space-y-4">
+
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <!-- Bootstrap servers -->
+          <div class="sm:col-span-2">
+            <label class="block font-medium text-sm text-gray-200 mb-1.5">Broker address</label>
+            <input
+              type="text"
+              name="bootstrap_servers"
+              value="{{ kafka_settings.bootstrap_servers if kafka_settings else '' }}"
+              placeholder="{{ 'Leave blank to use global KAFKA_BOOTSTRAP_SERVERS' if kafka_global_configured else 'e.g. broker.example.com:9092' }}"
+              class="w-full bg-gray-800 border border-gray-700 rounded-md px-3 py-2 text-sm font-mono text-gray-200 placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-600"
+            />
+            <p class="text-xs text-gray-500 mt-1">
+              {% if kafka_global_configured %}Global <code class="font-mono">KAFKA_BOOTSTRAP_SERVERS</code> is set — leave blank to use it, or override here for this tenant.{% else %}Kafka cluster address. Set globally via <code class="font-mono">KAFKA_BOOTSTRAP_SERVERS</code> in <code class="font-mono">.env</code>, or override per-tenant here.{% endif %}
+            </p>
+            <p class="text-xs text-gray-500 mt-1">
+              Consumer group: <code class="font-mono text-gray-400">{{ kafka_consumer_group }}</code>
+            </p>
+          </div>
+
+          <!-- Security protocol -->
+          <div>
+            <label class="block font-medium text-sm text-gray-200 mb-1.5">Security protocol</label>
+            <select
+              name="security_protocol"
+              class="w-full bg-gray-800 border border-gray-700 rounded-md px-3 py-2 text-sm text-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-600"
+            >
+              {% set security_protocol = kafka_settings.security_protocol if kafka_settings else '' %}
+              <option value="" {% if not security_protocol %}selected{% endif %}>Plain / default</option>
+              <option value="PLAINTEXT" {% if security_protocol == 'PLAINTEXT' %}selected{% endif %}>PLAINTEXT</option>
+              <option value="SSL" {% if security_protocol == 'SSL' %}selected{% endif %}>SSL</option>
+              <option value="SASL_SSL" {% if security_protocol == 'SASL_SSL' %}selected{% endif %}>SASL_SSL</option>
+              <option value="SASL_PLAINTEXT" {% if security_protocol == 'SASL_PLAINTEXT' %}selected{% endif %}>SASL_PLAINTEXT</option>
+            </select>
+            <p class="text-xs text-gray-500 mt-1">Redpanda Cloud usually uses <code class="font-mono">SASL_SSL</code>.</p>
+          </div>
+
+          <!-- SASL mechanism -->
+          <div>
+            <label class="block font-medium text-sm text-gray-200 mb-1.5">SASL mechanism</label>
+            <select
+              name="sasl_mechanism"
+              class="w-full bg-gray-800 border border-gray-700 rounded-md px-3 py-2 text-sm text-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-600"
+            >
+              {% set sasl_mechanism = kafka_settings.sasl_mechanism if kafka_settings else '' %}
+              <option value="" {% if not sasl_mechanism %}selected{% endif %}>None</option>
+              <option value="SCRAM-SHA-256" {% if sasl_mechanism == 'SCRAM-SHA-256' %}selected{% endif %}>SCRAM-SHA-256</option>
+              <option value="SCRAM-SHA-512" {% if sasl_mechanism == 'SCRAM-SHA-512' %}selected{% endif %}>SCRAM-SHA-512</option>
+              <option value="PLAIN" {% if sasl_mechanism == 'PLAIN' %}selected{% endif %}>PLAIN</option>
+            </select>
+          </div>
+
+          <!-- SASL username -->
+          <div>
+            <label class="block font-medium text-sm text-gray-200 mb-1.5">SASL username</label>
+            <input
+              type="text"
+              name="sasl_username"
+              value="{{ kafka_settings.sasl_username if kafka_settings and kafka_settings.sasl_username else '' }}"
+              autocomplete="off"
+              class="w-full bg-gray-800 border border-gray-700 rounded-md px-3 py-2 text-sm font-mono text-gray-200 placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-600"
+            />
+          </div>
+
+          <!-- SASL password -->
+          <div>
+            <label class="block font-medium text-sm text-gray-200 mb-1.5">SASL password</label>
+            <input
+              type="password"
+              name="sasl_password"
+              value=""
+              autocomplete="new-password"
+              placeholder="{% if kafka_settings and kafka_settings.sasl_password_encrypted %}Password saved; leave blank to keep it{% else %}Password{% endif %}"
+              class="w-full bg-gray-800 border border-gray-700 rounded-md px-3 py-2 text-sm font-mono text-gray-200 placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-600"
+            />
+            {% if kafka_settings and kafka_settings.sasl_password_encrypted %}
+            <label class="flex items-center gap-2 mt-2 text-xs text-gray-500">
+              <input type="checkbox" name="clear_sasl_password" value="on" class="w-3.5 h-3.5 rounded border-gray-600 bg-gray-800 text-indigo-600 focus:ring-indigo-600" />
+              Clear saved password
+            </label>
+            {% endif %}
+          </div>
+
+          <!-- Include pattern -->
+          <div>
+            <label class="block font-medium text-sm text-gray-200 mb-1.5">Topic include pattern</label>
+            <input
+              type="text"
+              name="topic_include_pattern"
+              value="{{ kafka_settings.topic_include_pattern if kafka_settings else '' }}"
+              placeholder="e.g. myapp\\..*"
+              class="w-full bg-gray-800 border border-gray-700 rounded-md px-3 py-2 text-sm font-mono text-gray-200 placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-600"
+            />
+            <p class="text-xs text-gray-500 mt-1">Regex. Blank = consume all topics.</p>
+          </div>
+
+          <!-- Exclude pattern -->
+          <div>
+            <label class="block font-medium text-sm text-gray-200 mb-1.5">Topic exclude pattern</label>
+            <input
+              type="text"
+              name="topic_exclude_pattern"
+              value="{{ kafka_settings.topic_exclude_pattern if kafka_settings else '^__' }}"
+              placeholder="^__"
+              class="w-full bg-gray-800 border border-gray-700 rounded-md px-3 py-2 text-sm font-mono text-gray-200 placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-600"
+            />
+            <p class="text-xs text-gray-500 mt-1">Regex. Default <code class="font-mono">^__</code> skips Kafka-internal topics.</p>
+          </div>
+
+          <!-- Error topic pattern -->
+          <div>
+            <label class="block font-medium text-sm text-gray-200 mb-1.5">Error topic pattern</label>
+            <input
+              type="text"
+              name="error_topic_pattern"
+              value="{{ kafka_settings.error_topic_pattern if kafka_settings else '\\.errors?$' }}"
+              placeholder="\.errors?$"
+              class="w-full bg-gray-800 border border-gray-700 rounded-md px-3 py-2 text-sm font-mono text-gray-200 placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-600"
+            />
+            <p class="text-xs text-gray-500 mt-1">Topics matching this are ingested as errors, not events.</p>
+          </div>
+
+          <!-- Event name fields -->
+          <div>
+            <label class="block font-medium text-sm text-gray-200 mb-1.5">Event name fields</label>
+            <input
+              type="text"
+              name="event_name_fields"
+              value="{{ (kafka_settings.event_name_fields | join(', ')) if kafka_settings else 'event_name, type, action, name' }}"
+              placeholder="event_name, type, action, name"
+              class="w-full bg-gray-800 border border-gray-700 rounded-md px-3 py-2 text-sm font-mono text-gray-200 placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-600"
+            />
+            <p class="text-xs text-gray-500 mt-1">Comma-separated JSON field names to try for the event name. Falls back to topic name.</p>
+          </div>
+        </div>
+
+        <!-- Enabled toggle -->
+        <div class="flex items-center gap-2.5 pt-1">
+          <input
+            type="checkbox"
+            name="enabled"
+            id="kafka-enabled"
+            value="on"
+            {% if not kafka_settings or kafka_settings.enabled %}checked{% endif %}
+            class="w-4 h-4 rounded border-gray-600 bg-gray-800 text-indigo-600 focus:ring-indigo-600"
+          />
+          <label for="kafka-enabled" class="text-sm text-gray-300">Enable Kafka ingestion for this tenant</label>
+        </div>
+
+        <div class="flex items-center gap-3 pt-1">
+          <button type="submit"
+                  class="bg-gray-100 text-gray-900 text-sm px-4 py-1.5 rounded-md hover:bg-white transition-colors font-medium">
+            Save
+          </button>
+          <span id="kafka-status" class="text-sm text-gray-400"></span>
+        </div>
+
+        {% if kafka_settings %}
+        <div class="border-t border-gray-800 pt-4 text-xs text-gray-500 grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <div>Last message: {% if kafka_settings.last_message_at %}<span class="font-mono text-gray-400">{{ kafka_settings.last_message_at }}</span>{% else %}none{% endif %}</div>
+          <div>Last topic: {% if kafka_settings.last_message_topic %}<span class="font-mono text-gray-400">{{ kafka_settings.last_message_topic }}</span>{% else %}none{% endif %}</div>
+          <div>Messages ingested: <span class="font-mono text-gray-400">{{ kafka_settings.messages_ingested_count or 0 }}</span></div>
+          <div>Last connection: {% if kafka_settings.last_connect_at %}<span class="font-mono text-gray-400">{{ kafka_settings.last_connect_at }}</span>{% else %}none{% endif %}</div>
+          {% if kafka_settings.last_connect_error %}
+          <div class="sm:col-span-2 text-red-400">Last connection error: <span class="font-mono">{{ kafka_settings.last_connect_error }}</span></div>
+          {% endif %}
+        </div>
+        {% endif %}
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- Notifications -->
+<section>
+  <h2 class="text-lg font-semibold mb-3 text-gray-100">Notifications</h2>
+  <div class="bg-gray-900 rounded-lg border border-gray-800 divide-y divide-gray-800">
+
+    <div class="px-6 py-5">
+      <form hx-post="/ui/tenants/{{ tenant.id }}/notifications"
+            hx-target="#notifications-status"
+            hx-swap="innerHTML"
+            class="space-y-5">
+
+        <!-- Slack channel -->
+        <div>
+          <label class="block font-medium text-sm text-gray-200 mb-1.5">Slack channel</label>
+          {% if slack_configured %}
+            <input
+              type="text"
+              name="slack_channel"
+              value="{{ tenant.slack_channel or '' }}"
+              placeholder="anomaly-alerts"
+              class="w-full bg-gray-800 border border-gray-700 rounded-md px-3 py-2 text-sm font-mono text-gray-200 placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-600"
+            />
+            <p class="text-xs text-gray-500 mt-1">Alerts will be posted here. Leave blank to disable Slack notifications.</p>
+          {% else %}
+            <div class="flex items-start gap-2 bg-yellow-950 border border-yellow-800 rounded-md px-3 py-2.5">
+              <span class="text-yellow-500 mt-0.5">⚠</span>
+              <p class="text-xs text-yellow-400">
+                Set <code class="font-mono bg-yellow-900 px-1 py-0.5 rounded">SLACK_BOT_TOKEN</code> and
+                <code class="font-mono bg-yellow-900 px-1 py-0.5 rounded">SLACK_SIGNING_SECRET</code>
+                in your <code class="font-mono bg-yellow-900 px-1 py-0.5 rounded">.env</code> file to enable Slack notifications.
+              </p>
+            </div>
+            <input type="hidden" name="slack_channel" value="{{ tenant.slack_channel or '' }}" />
+          {% endif %}
+        </div>
+
+        <!-- SMS / WhatsApp recipients -->
+        <div>
+          <label class="block font-medium text-sm text-gray-200 mb-1.5">WhatsApp / SMS recipients</label>
+          {% if twilio_configured %}
+            <div id="sms-recipient-list" class="space-y-2">
+              {% if tenant.sms_recipients %}
+                {% for number in tenant.sms_recipients %}
+                  {% set bare = number | replace("whatsapp:", "") %}
+                  <div class="sms-row flex gap-2 items-center">
+                    <span class="text-gray-400 text-sm font-mono select-none">WhatsApp</span>
+                    <input
+                      type="tel"
+                      name="sms_recipients"
+                      value="{{ bare }}"
+                      placeholder="+1 555 000 0000"
+                      class="flex-1 bg-gray-800 border border-gray-700 rounded-md px-3 py-2 text-sm font-mono text-gray-200 placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-600"
+                    />
+                    <button type="button"
+                            onclick="this.closest('.sms-row').remove()"
+                            class="text-gray-600 hover:text-red-400 transition-colors px-1 text-lg leading-none"
+                            title="Remove">×</button>
+                  </div>
+                {% endfor %}
+              {% endif %}
+            </div>
+            <button type="button"
+                    onclick="addSmsRecipient()"
+                    class="mt-2 text-xs text-gray-500 hover:text-gray-300 underline underline-offset-2 transition-colors">
+              + Add number
+            </button>
+            <p class="text-xs text-gray-500 mt-1.5">Enter numbers in international format, e.g. <span class="font-mono text-gray-400">+15551234567</span></p>
+          {% else %}
+            <div class="flex items-start gap-2 bg-yellow-950 border border-yellow-800 rounded-md px-3 py-2.5">
+              <span class="text-yellow-500 mt-0.5">⚠</span>
+              <p class="text-xs text-yellow-400">
+                Set <code class="font-mono bg-yellow-900 px-1 py-0.5 rounded">TWILIO_ACCOUNT_SID</code>,
+                <code class="font-mono bg-yellow-900 px-1 py-0.5 rounded">TWILIO_AUTH_TOKEN</code>, and
+                <code class="font-mono bg-yellow-900 px-1 py-0.5 rounded">TWILIO_FROM_NUMBER</code>
+                in your <code class="font-mono bg-yellow-900 px-1 py-0.5 rounded">.env</code> file to enable WhatsApp / SMS notifications.
+              </p>
+            </div>
+          {% endif %}
+        </div>
+
+        {% if slack_configured or twilio_configured %}
+        <div class="flex items-center gap-3">
+          <button type="submit"
+                  class="bg-gray-100 text-gray-900 text-sm px-4 py-1.5 rounded-md hover:bg-white transition-colors font-medium">
+            Save
+          </button>
+          <span id="notifications-status" class="text-sm text-gray-400"></span>
+        </div>
+        {% endif %}
+      </form>
+    </div>
+
+  </div>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function addSmsRecipient() {
+  const list = document.getElementById('sms-recipient-list');
+  const row = document.createElement('div');
+  row.className = 'sms-row flex gap-2 items-center';
+  row.innerHTML = `
+    <span class="text-gray-400 text-sm font-mono select-none">WhatsApp</span>
+    <input
+      type="tel"
+      name="sms_recipients"
+      placeholder="+1 555 000 0000"
+      class="flex-1 bg-gray-800 border border-gray-700 rounded-md px-3 py-2 text-sm font-mono text-gray-200 placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-600"
+    />
+    <button type="button"
+            onclick="this.closest('.sms-row').remove()"
+            class="text-gray-600 hover:text-red-400 transition-colors px-1 text-lg leading-none"
+            title="Remove">&times;</button>
+  `;
+  list.appendChild(row);
+  row.querySelector('input').focus();
+}
+</script>
+{% endblock %}

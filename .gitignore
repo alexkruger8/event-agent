@@ -1,0 +1,92 @@
+# -------------------------
+# Python / virtualenv
+# -------------------------
+venv/
+.env
+.env.*
+!.env.example
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# -------------------------
+# Typing / testing
+# -------------------------
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# -------------------------
+# Build artifacts
+# -------------------------
+build/
+dist/
+*.egg-info/
+
+# -------------------------
+# Logs
+# -------------------------
+*.log
+
+# -------------------------
+# OS files
+# -------------------------
+.DS_Store
+Thumbs.db
+
+# -------------------------
+# Editors / IDEs
+# -------------------------
+.vscode/
+.idea/
+*.swp
+
+# -------------------------
+# Docker
+# -------------------------
+docker-compose.override.yml
+
+# -------------------------
+# Databases / local state
+# -------------------------
+*.sqlite
+*.sqlite3
+
+# -------------------------
+# Kafka / Redis local data
+# -------------------------
+kafka-data/
+zookeeper-data/
+redis-data/
+
+# -------------------------
+# MCP config (contains local DB credentials)
+# -------------------------
+.mcp.json
+
+# -------------------------
+# Local assistant/tooling state
+# -------------------------
+.claude/
+
+# -------------------------
+# Secrets / credentials
+# -------------------------
+*.key
+*.pem
+*.crt
+google-service-account.json
+gitleaks-report.json
+
+# -------------------------
+# Gitkeep and gitignore
+# -------------------------
+!.gitkeep
+!.gitignore
+# Symbiotic Security - Security Rules (auto-generated)
+.github/instructions/symbiotic_security_rules.instructions.md
+CLAUDE.md

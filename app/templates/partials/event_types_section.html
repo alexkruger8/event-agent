@@ -1,0 +1,27 @@
+<section id="event-types-section" class="mb-10"{% if event_types_oob is defined and event_types_oob %} hx-swap-oob="outerHTML"{% endif %}>
+  <h2 class="text-lg font-semibold mb-3 text-gray-100">Event Types</h2>
+
+  {% if event_types %}
+  <div class="bg-gray-900 rounded-lg border border-gray-800 overflow-hidden">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="border-b border-gray-800 bg-gray-950 text-left text-gray-500 text-xs uppercase tracking-wide">
+          <th class="px-4 py-3 w-36">Event</th>
+          <th class="px-4 py-3">Description</th>
+          <th class="px-4 py-3 w-28 text-right">Total events</th>
+          <th class="px-4 py-3 w-20"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-800" id="event-types-table">
+        {% for et in event_types %}
+          {% include "partials/event_type_row.html" %}
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="bg-gray-900 rounded-lg border border-gray-800 px-6 py-8 text-center text-gray-500 text-sm">
+    No event types recorded yet. Ingest some events and run the pipeline.
+  </div>
+  {% endif %}
+</section>
