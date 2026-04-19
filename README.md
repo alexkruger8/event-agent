@@ -4,6 +4,8 @@ Talk to an AI agent that watches your event stream, learns how your system behav
 
 No pre-built dashboards. No query writing. Just ask what's going on.
 
+<img width="1202" height="906" alt="image" src="https://github.com/user-attachments/assets/fc9a2d44-904c-4276-921c-4afc38677c96" />
+
 Local-first developer preview. Not hardened for hosted multi-tenant production without additional auth, TLS, deployment, and operations work.
 
 ---
