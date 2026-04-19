@@ -70,7 +70,7 @@
             <input
               type="text"
               name="bootstrap_servers"
-              value="{{ kafka_settings.bootstrap_servers if kafka_settings else '' }}"
+              value="{{ kafka_settings.bootstrap_servers if kafka_settings and kafka_settings.bootstrap_servers else '' }}"
               placeholder="{{ 'Leave blank to use global KAFKA_BOOTSTRAP_SERVERS' if kafka_global_configured else 'e.g. broker.example.com:9092' }}"
               class="w-full bg-gray-800 border border-gray-700 rounded-md px-3 py-2 text-sm font-mono text-gray-200 placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-600"
             />
@@ -151,11 +151,11 @@
             <input
               type="text"
               name="topic_include_pattern"
-              value="{{ kafka_settings.topic_include_pattern if kafka_settings else '' }}"
+              value="{{ kafka_settings.topic_include_pattern if kafka_settings and kafka_settings.topic_include_pattern else '' }}"
               placeholder="e.g. myapp\\..*"
               class="w-full bg-gray-800 border border-gray-700 rounded-md px-3 py-2 text-sm font-mono text-gray-200 placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-600"
             />
-            <p class="text-xs text-gray-500 mt-1">Regex. Blank = consume all topics.</p>
+            <p class="text-xs text-gray-500 mt-1">Regex. For scoped broker users, set this to only the topics this tenant may read.</p>
           </div>
 
           <!-- Exclude pattern -->
@@ -164,7 +164,7 @@
             <input
               type="text"
               name="topic_exclude_pattern"
-              value="{{ kafka_settings.topic_exclude_pattern if kafka_settings else '^__' }}"
+              value="{{ kafka_settings.topic_exclude_pattern if kafka_settings and kafka_settings.topic_exclude_pattern else '^__' }}"
               placeholder="^__"
               class="w-full bg-gray-800 border border-gray-700 rounded-md px-3 py-2 text-sm font-mono text-gray-200 placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-600"
             />
@@ -177,7 +177,7 @@
             <input
               type="text"
               name="error_topic_pattern"
-              value="{{ kafka_settings.error_topic_pattern if kafka_settings else '\\.errors?$' }}"
+              value="{{ kafka_settings.error_topic_pattern if kafka_settings and kafka_settings.error_topic_pattern else '\\.errors?$' }}"
               placeholder="\.errors?$"
               class="w-full bg-gray-800 border border-gray-700 rounded-md px-3 py-2 text-sm font-mono text-gray-200 placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-600"
             />

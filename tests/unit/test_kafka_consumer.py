@@ -7,12 +7,14 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from app.workers.kafka_consumer import (
+    _compile_route,
     _consumer_config,
     _consumer_key,
     _extract_event_name,
     _ingest_error_message,
     _ingest_event_message,
     _matches_tenant,
+    _subscription_pattern,
     _TenantRoute,
 )
 
@@ -56,6 +58,14 @@ def test_consumer_key_changes_when_password_changes() -> None:
 
 
 @pytest.mark.unit
+def test_consumer_key_changes_when_topic_patterns_change() -> None:
+    route_a = _route(include=r"^app\.", exclude="^__", error=r"\.errors?$")
+    route_b = _route(include=r"^other\.", exclude="^__", error=r"\.errors?$")
+
+    assert _consumer_key(route_a) != _consumer_key(route_b)
+
+
+@pytest.mark.unit
 def test_consumer_config_includes_route_sasl() -> None:
     route = _route()
     route.bootstrap_servers = "cloud:9092"
@@ -72,6 +82,38 @@ def test_consumer_config_includes_route_sasl() -> None:
     assert config["sasl.mechanism"] == "SCRAM-SHA-256"
     assert config["sasl.username"] == "user"
     assert config["sasl.password"] == "pass"
+
+
+@pytest.mark.unit
+def test_subscription_pattern_uses_include_pattern_when_configured() -> None:
+    route = _route(include=r"^myapp\.")
+    assert _subscription_pattern(route) == r"^myapp\."
+
+
+@pytest.mark.unit
+def test_subscription_pattern_defaults_to_non_internal_topics() -> None:
+    route = _route()
+    assert _subscription_pattern(route) == r"^[^_].*"
+
+
+@pytest.mark.unit
+def test_compile_route_treats_none_string_include_pattern_as_blank() -> None:
+    row = MagicMock()
+    row.tenant_id = TENANT_ID
+    row.bootstrap_servers = "broker:9092"
+    row.sasl_password_encrypted = None
+    row.security_protocol = None
+    row.sasl_mechanism = None
+    row.sasl_username = None
+    row.topic_include_pattern = "None"
+    row.topic_exclude_pattern = "^__"
+    row.error_topic_pattern = r"\.errors?$"
+    row.event_name_fields = ["event_name"]
+
+    route = _compile_route(row)
+
+    assert route is not None
+    assert route.include_re is None
 
 
 # ---------------------------------------------------------------------------

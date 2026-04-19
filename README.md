@@ -67,7 +67,7 @@ The agent can run SQL against your data, learn what your events mean, and config
 
 ### Kafka / Redpanda (recommended)
 
-If you already produce events to Kafka or Redpanda topics, configure the external broker from the tenant **Settings** tab. The consumer auto-subscribes to non-internal topics on that tenant's broker and routes messages using the tenant's include/exclude patterns.
+If you already produce events to Kafka or Redpanda topics, configure the external broker from the tenant **Settings** tab. Set **Topic include pattern** to the topics this tenant should read; the consumer uses that pattern as its Kafka subscription. If no include pattern is set, it subscribes to non-internal topics and then applies the tenant's exclude pattern.
 
 The consumer expects JSON messages with at minimum an event name field (configurable — defaults to `event_name`). Any other fields land in `properties`. `user_id` and `timestamp` are extracted automatically if present.
 
@@ -81,7 +81,7 @@ Each tenant consumes with its own consumer group:
 ai-events-<tenant-id>
 ```
 
-Grant that group `READ` and `DESCRIBE` ACLs, along with `READ` and `DESCRIBE` on the topics the tenant should ingest.
+Grant that group `READ` and `DESCRIBE` ACLs, along with `READ` and `DESCRIBE` on the topics matched by the tenant's include pattern.
 
 Generate the encryption key once and keep it stable for this deployment:
 

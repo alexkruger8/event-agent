@@ -340,6 +340,13 @@ def update_notifications(
 
 # ── Kafka settings (HTMX) ────────────────────────────────────────────────────
 
+def _optional_form_text(value: str) -> str | None:
+    cleaned = value.strip()
+    if not cleaned or cleaned.lower() in {"none", "null"}:
+        return None
+    return cleaned
+
+
 @router.post("/tenants/{tenant_id}/kafka", response_class=HTMLResponse)
 def update_kafka_settings(
     request: Request,
@@ -375,10 +382,10 @@ def update_kafka_settings(
         )
         db.add(kafka)
 
-    kafka.bootstrap_servers = bootstrap_servers.strip() or None
-    kafka.topic_include_pattern = topic_include_pattern.strip() or None
-    kafka.topic_exclude_pattern = topic_exclude_pattern.strip() or "^__"
-    kafka.error_topic_pattern = error_topic_pattern.strip() or r"\.errors?$"
+    kafka.bootstrap_servers = _optional_form_text(bootstrap_servers)
+    kafka.topic_include_pattern = _optional_form_text(topic_include_pattern)
+    kafka.topic_exclude_pattern = _optional_form_text(topic_exclude_pattern) or "^__"
+    kafka.error_topic_pattern = _optional_form_text(error_topic_pattern) or r"\.errors?$"
     kafka.event_name_fields = fields or ["event_name", "type", "action", "name"]
     kafka.security_protocol = security_protocol.strip() or None
     kafka.sasl_mechanism = sasl_mechanism.strip() or None
