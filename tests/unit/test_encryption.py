@@ -24,6 +24,7 @@ def test_encrypt_decrypt_secret_round_trip(monkeypatch: pytest.MonkeyPatch) -> N
 @pytest.mark.unit
 def test_encrypt_secret_requires_key(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr("app.security.encryption.settings.kafka_credential_encryption_key", None)
+    monkeypatch.setattr("app.security.encryption._runtime_key", None)
 
     with pytest.raises(EncryptionConfigurationError):
         encrypt_secret("redpanda-password")
